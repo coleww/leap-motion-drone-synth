@@ -1,6 +1,16 @@
-multi oscillator gestural synth / theremin
+multi oscillator gestural resonance theremin thing
 
-made with d3js and using a leap motion device
 
-more info here:
-http://whichlight.tumblr.com/post/51998730999/gestural-synth-in-the-browser
+recombination of
+
+https://github.com/whichlight/resonance-processingjs-web-audio-api
+
+&&
+
+https://github.com/whichlight/leap-motion-drone-synth
+
+
+
+
+whichlight super dope.
+
