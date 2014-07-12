@@ -9,6 +9,8 @@ alert("this uses the web audio API, try opening it in google chrome \n\n <3 whic
 
 var synths = {}
 var gainVal = 0.1;
+var counter = 0;
+var qval = 25;
 
 var svg = d3.select("body").append("svg:svg");
 
@@ -20,7 +22,7 @@ function particle(x, y, z) {
           var r = 1e-6 + (y / 20)
           if(r<1){r=1;}
         return r;})
-      .style("stroke", "green")
+      .style("stroke", ['red', 'yellow', 'green'][Math.floor(Math.random()*3)])
     .style("stroke-width", "10px")
       .style("fill", "none")
       .style("stroke-opacity", 1-(1- ((500 -z) / 1000)))
@@ -35,10 +37,13 @@ function particle(x, y, z) {
 }
 
 function setupSynth(){
+
     var nodes={};
     nodes.source = context.createOscillator();
-    nodes.source.type=2;
+    nodes.source.type=1;
+    nodes.source.frequency.value = [100, 150, 200, 250, 50][Math.floor(Math.random() * 5)];
     nodes.filter = context.createBiquadFilter();
+    nodes.filter.Q.value = qval;
     nodes.volume = context.createGainNode();
     nodes.filter.type=0; //0 is a low pass filter
 
@@ -46,16 +51,44 @@ function setupSynth(){
     nodes.source.connect(nodes.filter);
     nodes.filter.connect(nodes.volume);
     //frequency val
-    nodes.filter.frequency.value=2000;
+    nodes.filter.frequency.value = 400;
     nodes.volume.connect(context.destination);
+
+// nodes.reverb = context.createConvolver();
+
+// nodes.volume.connect(nodes.reverb);
+// nodes.reverb.connect(context.destination);
+// nodes.volume.gain.value=0;
+// // nodes.source.noteOn(0);
+// nodes.volume.gain.value=0;
+// setReverbImpulseResponse('./libs/reverb.mp3', nodes.reverb, function() {
+//   // nodes.source.noteOn(0);
+// });
+
+
+
     return nodes;
 }
 
+function mapRange(value, low1, high1, low2, high2) {
+    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+}
 
-function synthmap(z,y){
-    tz = 6*(360 - z)
-    ty = 200+Math.pow(2.5,($(window).height()-y)/72.0);
-    return [tz,ty]
+function setReverbImpulseResponse(url, convolver, callback) {
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.responseType = "arraybuffer";
+
+    request.onload = function () {
+        convolver.buffer = context.createBuffer(request.response, false);
+        callback();
+    };
+    request.send();
+}
+
+function updateNote(syn, pitch, variance){
+   syn.filter.frequency.value = pitch + variance * Math.random();
+   // syn.source.frequency.value = (((Math.random() * 2) - 1) * 0.1);
 }
 
 
@@ -74,28 +107,28 @@ $(document).ready(function() {
         //set up synth if it doesnt exist
         if (!(pointer.id in synths)){
             var n = setupSynth();
-            n.source.noteOn(0);
-            synths[pointer.id]=n;
+          n.source.noteOn(0);
+          synths[pointer.id] = n;
         }
 
         //update synth
-        var freq=  synthmap(posZ,posY);
-        synths[pointer.id].source.frequency.value = freq[1]
-        synths[pointer.id].filter.frequency.value = freq[0]
+        var freq = mapRange(posY, window.screen.availHeight, 0, 200, 780);
+        var syn = synths[pointer.id];
+        updateNote(syn, freq, 100);
+
         onsynth.push(pointer.id);
       }
 
      for (var s in synths){
-             synths[s].volume.gain.value=0;
+       synths[s].volume.gain.value=0;
       }
 
      //only play ones that are on
       for (var s in onsynth){
-            synths[onsynth[s]].volume.gain.value=gainVal;
+        synths[onsynth[s]].volume.gain.value=gainVal;
       }
 
 
-
   });
-})
+});
 
