@@ -133,10 +133,13 @@ function getCoord(pointer) {
 
 $(document).ready(function() {
   Leap.loop(function(frame) {
-    var onsynth = [];
-    if (frame.pointables.length <= 0) {
-      // can't remember how to avoid zombie objects
+
+
+
+          // can't remember how to avoid zombie objects
       // is this even a zombie object case?
+    if (frame.pointables.length <= 0) {
+
       for (var synth in synths) {
         delete synths.synth;
       }
@@ -145,7 +148,14 @@ $(document).ready(function() {
     }
 
 
+// silence all the synths
+    for (var s in synths){
+      synths[s].volume.gain.value = 0;
+    }
 
+
+
+    var onsynth = [];
     for (var i = 0; i < frame.pointables.length; i++) {
       var coord = getCoord(frame.pointables[i]);
 
@@ -167,9 +177,7 @@ $(document).ready(function() {
       onsynth.push(coord.id);
     }
 
-    for (var s in synths){
-     synths[s].volume.gain.value = 0;
-    }
+
 
     //only play ones that are on
     for (var os in onsynth){
