@@ -65,37 +65,24 @@ var filterCeil = 780;
 
 
 function setupSynth(){
+  var nodes={};
+  nodes.source = context.createOscillator();
+  nodes.source.type=1;
+  nodes.source.frequency.value = [100, 150, 200, 250, 50][Math.floor(Math.random() * 5)];
+  nodes.filter = context.createBiquadFilter();
+  nodes.filter.Q.value = qval;
+  nodes.volume = context.createGainNode();
+  nodes.filter.type = 0; //0 is a low pass filter
 
-    var nodes={};
-    nodes.source = context.createOscillator();
-    nodes.source.type=1;
-    nodes.source.frequency.value = [100, 150, 200, 250, 50][Math.floor(Math.random() * 5)];
-    nodes.filter = context.createBiquadFilter();
-    nodes.filter.Q.value = qval;
-    nodes.volume = context.createGainNode();
-    nodes.filter.type=0; //0 is a low pass filter
+  nodes.volume.gain.value = 0;
+  nodes.source.connect(nodes.filter);
+  nodes.filter.connect(nodes.volume);
 
-    nodes.volume.gain.value = 0;
-    nodes.source.connect(nodes.filter);
-    nodes.filter.connect(nodes.volume);
-    //frequency val
-    nodes.filter.frequency.value = 400;
-    nodes.volume.connect(context.destination);
+  //frequency val
+  nodes.filter.frequency.value = 400;
+  nodes.volume.connect(context.destination);
 
-// nodes.reverb = context.createConvolver();
-
-// nodes.volume.connect(nodes.reverb);
-// nodes.reverb.connect(context.destination);
-// nodes.volume.gain.value=0;
-// // nodes.source.noteOn(0);
-// nodes.volume.gain.value=0;
-// setReverbImpulseResponse('./libs/reverb.mp3', nodes.reverb, function() {
-//   // nodes.source.noteOn(0);
-// });
-
-
-
-    return nodes;
+  return nodes;
 }
 
 
@@ -125,8 +112,14 @@ function mapRange(value, low1, high1, low2, high2) {
   return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
 }
 
-
-
+function getCoord(pointer) {
+  return {
+    x: window.innerWidth / 2 + 3 * pointer.tipPosition[0],
+    y: window.innerHeight - 150 - pointer.tipPosition[1],
+    z: 180 + pointer.tipPosition[2],
+    id: pointer.id
+  };
+}
 
 
 
@@ -141,41 +134,37 @@ function mapRange(value, low1, high1, low2, high2) {
 $(document).ready(function() {
   Leap.loop(function(frame) {
     var onsynth = [];
+    if (frame.pointables.length <= 0) {
+      // can't remember how to avoid zombie objects
+      // is this even a zombie object case?
+      for (var synth in synths) {
+        delete synths.synth;
+      }
+      synths.length = 0;
+      synths = {};
+    }
+
+
+
     for (var i = 0; i < frame.pointables.length; i++) {
-
-
-      var pointer = frame.pointables[i];
-
-
-      var posX = window.innerWidth / 2 + 3 * pointer.tipPosition[0];
-      var posY = window.innerHeight - 150 - pointer.tipPosition[1];
-      var posZ = 180 + pointer.tipPosition[2];
+      var coord = getCoord(frame.pointables[i]);
 
       //adding d3 circle
-      particle(posX, posY, posZ);
+      particle(coord.x, coord.y, coord.z);
 
-
-
-// errrmm...huh?
       //set up synth if it doesnt exist
-      if (!(pointer.id in synths)){
-          var n = setupSynth();
+      if (!(coord.id in synths)) {
+        var n = setupSynth();
         n.source.noteOn(0);
-        synths[pointer.id] = n;
+        synths[coord.id] = n;
       }
 
-      //WHAT IS THIS THING
-console.log(pointer.id);
-//does pointer refer to like...the lifecycle of a finger above the thing?
-// hmmmmmmmm
-
-
       //update synth
-      var freq = mapRange(posY, window.screen.availHeight, 0, filterFloor, filterCeil);
-      var syn = synths[pointer.id];
+      var freq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
+      var syn = synths[coord.id];
       updateNote(syn, freq, 100);
 
-      onsynth.push(pointer.id);
+      onsynth.push(coord.id);
     }
 
     for (var s in synths){
