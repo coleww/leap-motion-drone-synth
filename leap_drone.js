@@ -12,7 +12,7 @@
 
 
 try{
-  var context = new webkitAudioContext(),
+  var context = new (window.AudioContext || window.webkitAudioContext)(),
   _x,
   _y;
 }
@@ -69,24 +69,53 @@ var qval = 25;
 
 var filterFloor = 200;
 var filterCeil = 780;
+var oscFloor = 50;
+var oscCeil = 800;
 
+function makeDistortionCurve(amount) {
+  var k = typeof amount === 'number' ? amount : 50,
+    n_samples = 44100,
+    curve = new Float32Array(n_samples),
+    deg = Math.PI / 180,
+    i = 0,
+    x;
+  for ( ; i < n_samples; ++i ) {
+    x = i * 2 / n_samples - 1;
+    curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+  }
+  return curve;
+};
 
 function setupSynth(){
   var nodes={};
   nodes.source = context.createOscillator();
-  nodes.source.type=1;
+  nodes.source.type = 1;
   nodes.source.frequency.value = [100, 150, 200, 250, 50][Math.floor(Math.random() * 5)];
+
   nodes.filter = context.createBiquadFilter();
   nodes.filter.Q.value = qval;
-  nodes.volume = context.createGainNode();
-  nodes.filter.type = 0; //0 is a low pass filter
-
-  nodes.volume.gain.value = 0;
-  nodes.source.connect(nodes.filter);
-  nodes.filter.connect(nodes.volume);
-
-  //frequency val
   nodes.filter.frequency.value = 400;
+  nodes.filter.type = "lowshelf";//0; //0 is a low pass filter
+
+  nodes.distortion = context.createWaveShaper();
+  nodes.analyser = context.createAnalyser();
+  nodes.distortion.curve = makeDistortionCurve(100);
+
+
+  nodes.lowFilter = context.createBiquadFilter();
+  nodes.lowFilter.Q.value = qval;
+  nodes.lowFilter.type = 0;
+  nodes.lowFilter.frequency.value = 300;
+
+
+  nodes.volume = context.createGainNode();
+  nodes.volume.gain.value = 0;
+
+  nodes.source.connect(nodes.filter);
+  nodes.filter.connect(nodes.analyser);
+  nodes.analyser.connect(nodes.distortion);
+  nodes.distortion.connect(nodes.lowFilter);
+  nodes.lowFilter.connect(nodes.volume);
   nodes.volume.connect(context.destination);
 
   return nodes;
@@ -105,9 +134,10 @@ function setReverbImpulseResponse(url, convolver, callback) {
   request.send();
 }
 
-function updateNote(syn, pitch, variance){
-  syn.filter.frequency.value = pitch + variance * Math.random();
-  // syn.source.frequency.value = (((Math.random() * 2) - 1) * 0.1);
+function updateNote(syn, filter, osc, z, variance){
+  syn.filter.frequency.value = filter + (variance * Math.random());
+  syn.lowFilter.frequency.value = osc + (variance * Math.random());
+  syn.distortion.curve = makeDistortionCurve(z);
 }
 
 
@@ -145,14 +175,14 @@ $(document).ready(function() {
 
           // can't remember how to avoid zombie objects
       // is this even a zombie object case?
-    if (frame.pointables.length <= 0) {
+    // if (frame.pointables.length <= 0) {
 
-      for (var synth in synths) {
-        delete synths.synth;
-      }
-      synths.length = 0;
-      synths = {};
-    }
+    //   for (var synth in synths) {
+    //     delete synths.synth;
+    //   }
+    //   synths.length = 0;
+    //   synths = {};
+    // }
 
 
 // silence all the synths
@@ -168,7 +198,6 @@ $(document).ready(function() {
 
       //adding d3 circle
       addCircle(coord.x, coord.y, coord.z);
-      var freq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
       //set up synth if it doesnt exist
       if (coord.id in synths) {
 
@@ -181,7 +210,9 @@ $(document).ready(function() {
       //update synth
 
       var syn = synths[coord.id];
-      updateNote(syn, freq, 100);
+      var filterFreq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
+      var oscFreq = mapRange(coord.x, window.screen.availWidth, 0, oscFloor, oscCeil);
+      updateNote(syn, filterFreq, oscFreq, coord.z, 100);//ugh whatever make it ugly then refactor
 
       onsynth.push(coord.id);
     }
