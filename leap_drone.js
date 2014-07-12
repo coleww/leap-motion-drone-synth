@@ -1,9 +1,20 @@
-//WOW SO LEAPIng!
+(function(root){
+  var Drone = root.Drone = (root.Drone || {});
+
+
+
+
+
+})(this);
+
+
+
 
 
 try{
   var context = new webkitAudioContext(),
-  _x, _y;
+  _x,
+  _y;
 }
 catch(err){
   alert('sorry! so so sorry!');
@@ -13,40 +24,36 @@ catch(err){
 
 
 
-//what do we have here
-//DEFINITELY a synth object.
-//probz obvs also a D3 object of
-
-
-
-
-
-
-
 
 
 var svg = d3.select("body").append("svg:svg");
-function particle(x, y, z) {
+function addCircle(x, y, z) {
   svg.append("svg:circle")
-      .attr("cx", x)
-      .attr("cy", y)
-      .attr("r", function(){
-          var r = 1e-6 + (y / 20);
-          if(r<1){r=1;}
-        return r;})
-      .style("stroke", ['red', 'yellow', 'green'][Math.floor(Math.random()*3)])
+    .attr("cx", x)
+    .attr("cy", y)
+    .attr("r", function(){
+      var r = 1e-6 + (y / 20);
+      if (r < 1) {
+        r = 1;
+      }
+      return r;
+    })
+    .style("stroke", ['red', 'yellow', 'green'][Math.floor(Math.random()*3)])
     .style("stroke-width", "10px")
-      .style("fill", "none")
-      .style("stroke-opacity", 1-(1- ((500 -z) / 1000)))
+    .style("fill", "none")
+    .style("stroke-opacity", 1 - (1 - ( (500 - z) / 1000) ) )
     .transition()
-      .duration(1000)
-      .ease(Math.sqrt)
-      .attr("r", function(){
-            if(y<1){return 1;}
-            return y;})
-      .style("stroke-opacity", 1e-6)
-      .remove();
-}
+    .duration(1000)
+    .ease(Math.sqrt)
+    .attr("r", function(){
+      if (y < 1) {
+        return 1;
+      }
+      return y;
+    })
+    .style("stroke-opacity", 1e-6)
+    .remove();
+}//is this really what d3 is like? NO THANK U
 
 
 
@@ -160,17 +167,19 @@ $(document).ready(function() {
       var coord = getCoord(frame.pointables[i]);
 
       //adding d3 circle
-      particle(coord.x, coord.y, coord.z);
-
+      addCircle(coord.x, coord.y, coord.z);
+      var freq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
       //set up synth if it doesnt exist
-      if (!(coord.id in synths)) {
+      if (coord.id in synths) {
+
+      } else {
         var n = setupSynth();
         n.source.noteOn(0);
         synths[coord.id] = n;
       }
 
       //update synth
-      var freq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
+
       var syn = synths[coord.id];
       updateNote(syn, freq, 100);
 
