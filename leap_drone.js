@@ -72,6 +72,27 @@ var filterCeil = 780;
 var oscFloor = 50;
 var oscCeil = 800;
 
+function updateUI() {
+  $("#output").text('1a:' + filterFloor + '|1b:' + filterCeil + '|||2a:' + oscFloor + '|2b:' + oscCeil);
+}
+key('up', function(){
+  filterFloor += 25;
+  updateUi();
+});
+
+key('down', function(){
+  filterFloor -= 25;
+  updateUi();
+});
+
+key('left', function(){
+
+});
+
+key('right', function(){
+
+});
+
 function makeDistortionCurve(amount) {
   var k = typeof amount === 'number' ? amount : 50,
     n_samples = 44100,
@@ -84,7 +105,7 @@ function makeDistortionCurve(amount) {
     curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
   }
   return curve;
-};
+}
 
 function setupSynth(){
   var nodes={};
@@ -101,12 +122,13 @@ function setupSynth(){
   nodes.analyser = context.createAnalyser();
   nodes.distortion.curve = makeDistortionCurve(100);
 
+  nodes.panning = context.createPanner();
+  nodes.panning.setPosition(0, 0, 0);
 
   nodes.lowFilter = context.createBiquadFilter();
   nodes.lowFilter.Q.value = qval;
   nodes.lowFilter.type = 0;
   nodes.lowFilter.frequency.value = 300;
-
 
   nodes.volume = context.createGainNode();
   nodes.volume.gain.value = 0;
@@ -116,7 +138,8 @@ function setupSynth(){
   nodes.analyser.connect(nodes.distortion);
   nodes.distortion.connect(nodes.lowFilter);
   nodes.lowFilter.connect(nodes.volume);
-  nodes.volume.connect(context.destination);
+  nodes.volume.connect(nodes.panning);
+  nodes.panning.connect(context.destination);
 
   return nodes;
 }
@@ -134,10 +157,13 @@ function setReverbImpulseResponse(url, convolver, callback) {
   request.send();
 }
 
-function updateNote(syn, filter, osc, z, variance){
+function updateNote(syn, filter, osc, z, variance, coord){
   syn.filter.frequency.value = filter + (variance * Math.random());
   syn.lowFilter.frequency.value = osc + (variance * Math.random());
-  syn.distortion.curve = makeDistortionCurve(z);
+  // console.log(coord)
+  syn.panning.setPosition(pannifyCoord(coord.x), pannifyCoord(coord.y), pannifyCoord(coord.z));
+
+  // syn.distortion.curve = makeDistortionCurve(z);
 }
 
 
@@ -148,6 +174,18 @@ function updateNote(syn, filter, osc, z, variance){
 function mapRange(value, low1, high1, low2, high2) {
   return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
 }
+
+function pannifyCoord(coord) {
+  if (coord <= 0){
+    coord = coord * -1;
+  }
+  if (coord > 1000){
+    coord = 1000;
+  }
+
+  return mapRange(coord, 0, 1000, -3, 3);
+}
+
 
 function getCoord(pointer) {
   return {
@@ -171,7 +209,7 @@ function getCoord(pointer) {
 $(document).ready(function() {
   Leap.loop(function(frame) {
 
-
+    if (Math.random() < 0.33){
 
           // can't remember how to avoid zombie objects
       // is this even a zombie object case?
@@ -195,7 +233,10 @@ $(document).ready(function() {
     var onsynth = [];
     for (var i = 0; i < frame.pointables.length; i++) {
       var coord = getCoord(frame.pointables[i]);
-
+//       if(i == 0){
+//         console.log(coord)
+// console.log(pannifyCoord(coord.x), pannifyCoord(coord.y), pannifyCoord(coord.z))
+// }
       //adding d3 circle
       addCircle(coord.x, coord.y, coord.z);
       //set up synth if it doesnt exist
@@ -212,7 +253,7 @@ $(document).ready(function() {
       var syn = synths[coord.id];
       var filterFreq = mapRange(coord.y, window.screen.availHeight, 0, filterFloor, filterCeil);
       var oscFreq = mapRange(coord.x, window.screen.availWidth, 0, oscFloor, oscCeil);
-      updateNote(syn, filterFreq, oscFreq, coord.z, 100);//ugh whatever make it ugly then refactor
+      updateNote(syn, filterFreq, oscFreq, coord.z, 100, coord);//ugh whatever make it ugly then refactor
 
       onsynth.push(coord.id);
     }
@@ -223,6 +264,7 @@ $(document).ready(function() {
     for (var os in onsynth){
       synths[onsynth[os]].volume.gain.value = gainVal;
     }
+}
   });
 });
 

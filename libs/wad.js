@@ -566,7 +566,7 @@ then finally play the sound by calling playEnv() **/
 
 /** If a Wad is created with reverb without specifying a URL for the impulse response,
 grab it from the defaultImpulse URL **/
-    Wad.defaultImpulse = 'http://www.codecur.io/us/sendaudio/widehall.wav'
+    Wad.defaultImpulse = './libs/reverb.mp3'
     Wad.setGlobalReverb = function(arg){
         Wad.reverb = {}
         Wad.reverb.node = context.createConvolver()
@@ -717,7 +717,7 @@ grab it from the defaultImpulse URL **/
     }
 
 
-    Wad.pitchesArray = [ // Just an array of note names. This can be useful for mapping MIDI data to notes. 
+    Wad.pitchesArray = [ // Just an array of note names. This can be useful for mapping MIDI data to notes.
         'C0',
         'C#0',
         'D0',
@@ -818,65 +818,6 @@ grab it from the defaultImpulse URL **/
     ]
 //////////////////////////////////////////////////////////////
 
-    Wad.midiInstrument = {
-        play : function() {
-            console.log('playing midi')
-        },
-        stop : function() {
-            console.log('stopping midi')
-        }
-    }
-    Wad.midiMaps = []
-    Wad.midiMaps[0] = function(event){
-        console.log(event.receivedTime, event.data)
-        if ( event.data[0] === 144 ) { // 144 means the midi message has note data
-            console.log('note')
-            if ( event.data[2] === 0 ) { // noteOn velocity of 0 means this is actually a noteOff message
-                Wad.midiInstrument.stop(Wad.pitchesArray[event.data[1]])
-            }
-            else if ( event.data[2] > 0 ) {
-                console.log(Wad.pitchesArray[event.data[1]])
-                Wad.midiInstrument.play({pitch : Wad.pitchesArray[event.data[1]], label : Wad.pitchesArray[event.data[1]]})
-            }
-        }
-        else if ( event.data[0] === 176 ) { // 176 means the midi message has controller data
-            console.log('controller')
-        }
-        else if ( event.data[0] === 224 ) { // 224 means the midi message has pitch bend data
-            console.log('pitch bend')
-        }
-    }
-
-
-    var m = null;   // m = MIDIAccess object for you to make calls on
-    var onSuccessCallback = function(access){ 
-        console.log('got midi access')
-        m = access;
-
-        // Things you can do with the MIDIAccess object:
-        var inputs = m.inputs();   // inputs = array of MIDIPorts
-        // console.log(inputs)
-        // var outputs = m.outputs(); // outputs = array of MIDIPorts
-        for ( var i = 0; i < inputs.length; i++ ) {
-            inputs[i].onmidimessage = Wad.midiMaps[i]; // onmidimessage( event ), event.data & event.receivedTime are populated
-        }
-        // var o = m.outputs()[0];           // grab first output device
-        // o.send( [ 0x90, 0x45, 0x7f ] );     // full velocity note on A4 on channel zero
-        // o.send( [ 0x80, 0x45, 0x7f ], window.performance.now() + 1000 );  // full velocity A4 note off in one second.
-    };
-    var onErrorCallback = function(err){
-        console.log("uh-oh! Something went wrong!  Error code: " + err.code );
-    }
-    
-    try {
-        navigator.requestMIDIAccess().then(onSuccessCallback, onErrorCallback);
-    }
-    catch(err) {
-        var text = "There was an error on this page.\n\n";
-        text += "Error description: " + err.message + "\n\n";
-        text += "Click OK to continue.\n\n";
-        console.log(text);
-    }
 
 
     Wad.presets = {
