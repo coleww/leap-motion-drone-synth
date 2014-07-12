@@ -15,11 +15,20 @@ try{
   var context = new (window.AudioContext || window.webkitAudioContext)(),
   _x,
   _y;
+
+  var Globreverb = context.createConvolver();
+  setReverbImpulseResponse('./libs/reverb.mp3', Globreverb, function() {
+    // nodes.source.noteOn(0);
+  });
+  Globreverb.connect(context.destination);
 }
 catch(err){
+  alert(err)
   alert('sorry! so so sorry!');
   alert('really just, gosh, wow, very sorry!');
 }
+
+
 
 
 
@@ -38,12 +47,12 @@ function addCircle(x, y, z) {
       }
       return r;
     })
-    .style("stroke", ['red', 'yellow', 'green'][Math.floor(Math.random()*3)])
+    .style("stroke", ['blue', 'red', 'yellow'][Math.floor(Math.random()*3)])
     .style("stroke-width", "10px")
     .style("fill", "none")
     .style("stroke-opacity", 1 - (1 - ( (500 - z) / 1000) ) )
     .transition()
-    .duration(1000)
+    .duration(5000)
     .ease(Math.sqrt)
     .attr("r", function(){
       if (y < 1) {
@@ -63,7 +72,7 @@ function addCircle(x, y, z) {
 
 
 var synths = {};
-var gainVal = 0.1;
+var gainVal = 0.15;
 var counter = 0;
 var qval = 25;
 
@@ -133,13 +142,18 @@ function setupSynth(){
   nodes.volume = context.createGainNode();
   nodes.volume.gain.value = 0;
 
+
+
+
+
+
   nodes.source.connect(nodes.filter);
   nodes.filter.connect(nodes.analyser);
   nodes.analyser.connect(nodes.distortion);
   nodes.distortion.connect(nodes.lowFilter);
   nodes.lowFilter.connect(nodes.volume);
   nodes.volume.connect(nodes.panning);
-  nodes.panning.connect(context.destination);
+  nodes.panning.connect(Globreverb);
 
   return nodes;
 }
@@ -163,7 +177,7 @@ function updateNote(syn, filter, osc, z, variance, coord){
   // console.log(coord)
   syn.panning.setPosition(pannifyCoord(coord.x), pannifyCoord(coord.y), pannifyCoord(coord.z));
 
-  // syn.distortion.curve = makeDistortionCurve(z);
+  syn.distortion.curve = makeDistortionCurve(z * variance * Math.random());
 }
 
 
@@ -231,7 +245,7 @@ $(document).ready(function() {
 
 
     var onsynth = [];
-    for (var i = 0; i < frame.pointables.length; i++) {
+    for (var i = 0; i < frame.pointables.length && i < 4; i++) {
       var coord = getCoord(frame.pointables[i]);
 //       if(i == 0){
 //         console.log(coord)
