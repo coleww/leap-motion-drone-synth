@@ -1,25 +1,37 @@
+//WOW SO LEAPIng!
+
+
 try{
-var context = new webkitAudioContext(),
-_x, _y;
+  var context = new webkitAudioContext(),
+  _x, _y;
 }
 catch(err){
-alert("this uses the web audio API, try opening it in google chrome \n\n <3 whichlight" );
-
+  alert('sorry! so so sorry!');
+  alert('really just, gosh, wow, very sorry!');
 }
 
-var synths = {}
-var gainVal = 0.1;
-var counter = 0;
-var qval = 25;
+
+
+
+//what do we have here
+//DEFINITELY a synth object.
+//probz obvs also a D3 object of
+
+
+
+
+
+
+
+
 
 var svg = d3.select("body").append("svg:svg");
-
 function particle(x, y, z) {
   svg.append("svg:circle")
       .attr("cx", x)
       .attr("cy", y)
       .attr("r", function(){
-          var r = 1e-6 + (y / 20)
+          var r = 1e-6 + (y / 20);
           if(r<1){r=1;}
         return r;})
       .style("stroke", ['red', 'yellow', 'green'][Math.floor(Math.random()*3)])
@@ -35,6 +47,22 @@ function particle(x, y, z) {
       .style("stroke-opacity", 1e-6)
       .remove();
 }
+
+
+
+
+
+
+
+
+var synths = {};
+var gainVal = 0.1;
+var counter = 0;
+var qval = 25;
+
+var filterFloor = 200;
+var filterCeil = 780;
+
 
 function setupSynth(){
 
@@ -70,65 +98,94 @@ function setupSynth(){
     return nodes;
 }
 
-function mapRange(value, low1, high1, low2, high2) {
-    return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
-}
 
 function setReverbImpulseResponse(url, convolver, callback) {
-    var request = new XMLHttpRequest();
-    request.open("GET", url, true);
-    request.responseType = "arraybuffer";
+  var request = new XMLHttpRequest();
+  request.open("GET", url, true);
+  request.responseType = "arraybuffer";
 
-    request.onload = function () {
-        convolver.buffer = context.createBuffer(request.response, false);
-        callback();
-    };
-    request.send();
+  request.onload = function () {
+    convolver.buffer = context.createBuffer(request.response, false);
+    callback();
+  };
+  request.send();
 }
 
 function updateNote(syn, pitch, variance){
-   syn.filter.frequency.value = pitch + variance * Math.random();
-   // syn.source.frequency.value = (((Math.random() * 2) - 1) * 0.1);
+  syn.filter.frequency.value = pitch + variance * Math.random();
+  // syn.source.frequency.value = (((Math.random() * 2) - 1) * 0.1);
 }
+
+
+
+
+
+
+function mapRange(value, low1, high1, low2, high2) {
+  return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+}
+
+
+
+
+
+
+
+
+
+
+// SO should.include.keys(" ");
+// make a theremin object that gets passed a frame.
 
 
 $(document).ready(function() {
   Leap.loop(function(frame) {
-      onsynth = [];
-      for (var i = 0; i < frame.pointables.length; i++) {
-        var pointer = frame.pointables[i];
-        var posX = window.innerWidth/2 + 3*(pointer.tipPosition[0]);
-        var posY = window.innerHeight -150 - (pointer.tipPosition[1]);
-        var posZ = 180+ (pointer.tipPosition[2]);
+    var onsynth = [];
+    for (var i = 0; i < frame.pointables.length; i++) {
 
-        //adding d3 circle
-        particle(posX, posY, posZ);
 
-        //set up synth if it doesnt exist
-        if (!(pointer.id in synths)){
-            var n = setupSynth();
-          n.source.noteOn(0);
-          synths[pointer.id] = n;
-        }
+      var pointer = frame.pointables[i];
 
-        //update synth
-        var freq = mapRange(posY, window.screen.availHeight, 0, 200, 780);
-        var syn = synths[pointer.id];
-        updateNote(syn, freq, 100);
 
-        onsynth.push(pointer.id);
+      var posX = window.innerWidth / 2 + 3 * pointer.tipPosition[0];
+      var posY = window.innerHeight - 150 - pointer.tipPosition[1];
+      var posZ = 180 + pointer.tipPosition[2];
+
+      //adding d3 circle
+      particle(posX, posY, posZ);
+
+
+
+// errrmm...huh?
+      //set up synth if it doesnt exist
+      if (!(pointer.id in synths)){
+          var n = setupSynth();
+        n.source.noteOn(0);
+        synths[pointer.id] = n;
       }
 
-     for (var s in synths){
-       synths[s].volume.gain.value=0;
-      }
-
-     //only play ones that are on
-      for (var s in onsynth){
-        synths[onsynth[s]].volume.gain.value=gainVal;
-      }
+      //WHAT IS THIS THING
+console.log(pointer.id);
+//does pointer refer to like...the lifecycle of a finger above the thing?
+// hmmmmmmmm
 
 
+      //update synth
+      var freq = mapRange(posY, window.screen.availHeight, 0, filterFloor, filterCeil);
+      var syn = synths[pointer.id];
+      updateNote(syn, freq, 100);
+
+      onsynth.push(pointer.id);
+    }
+
+    for (var s in synths){
+     synths[s].volume.gain.value = 0;
+    }
+
+    //only play ones that are on
+    for (var os in onsynth){
+      synths[onsynth[os]].volume.gain.value = gainVal;
+    }
   });
 });
 
