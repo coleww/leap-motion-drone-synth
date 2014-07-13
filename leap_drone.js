@@ -34,33 +34,32 @@ catch(err){
 
 
 
-
-var svg = d3.select("body").append("svg:svg");
+var svg = d3.select('body').append('svg:svg');
 function addCircle(x, y, z) {
-  svg.append("svg:circle")
-    .attr("cx", x)
-    .attr("cy", y)
-    .attr("r", function(){
+  svg.append('svg:circle')
+    .attr('cx', x)
+    .attr('cy', y)
+    .attr('r', function(){
       var r = 1e-6 + (y / 20);
       if (r < 1) {
         r = 1;
       }
       return r;
     })
-    .style("stroke", ['blue', 'red', 'yellow'][Math.floor(Math.random()*3)])
-    .style("stroke-width", "10px")
-    .style("fill", "none")
-    .style("stroke-opacity", 1 - (1 - ( (500 - z) / 1000) ) )
+    .style('stroke', 'rgb(' + Math.floor((Math.random() * 125)) + ',' + Math.floor((Math.random() * 225)) + ',' + Math.floor(((Math.random() * 155) + 100)) + ')')
+    .style('stroke-width', '10px')
+    .style('fill', 'none')
+    .style('stroke-opacity', 1 - (1 - ( (500 - z) / 1000) ) )
     .transition()
     .duration(5000)
     .ease(Math.sqrt)
-    .attr("r", function(){
+    .attr('r', function(){
       if (y < 1) {
         return 1;
       }
       return y;
     })
-    .style("stroke-opacity", 1e-6)
+    .style('stroke-opacity', 1e-6)
     .remove();
 }//is this really what d3 is like? NO THANK U
 
@@ -76,31 +75,12 @@ var gainVal = 0.15;
 var counter = 0;
 var qval = 25;
 
-var filterFloor = 200;
-var filterCeil = 780;
+var filterFloor = 50;
+var filterCeil = 800;
 var oscFloor = 50;
 var oscCeil = 800;
 
-function updateUI() {
-  $("#output").text('1a:' + filterFloor + '|1b:' + filterCeil + '|||2a:' + oscFloor + '|2b:' + oscCeil);
-}
-key('up', function(){
-  filterFloor += 25;
-  updateUi();
-});
 
-key('down', function(){
-  filterFloor -= 25;
-  updateUi();
-});
-
-key('left', function(){
-
-});
-
-key('right', function(){
-
-});
 
 function makeDistortionCurve(amount) {
   var k = typeof amount === 'number' ? amount : 50,
@@ -125,7 +105,7 @@ function setupSynth(){
   nodes.filter = context.createBiquadFilter();
   nodes.filter.Q.value = qval;
   nodes.filter.frequency.value = 400;
-  nodes.filter.type = "lowshelf";//0; //0 is a low pass filter
+  nodes.filter.type = 'lowshelf';//0; //0 is a low pass filter
 
   nodes.distortion = context.createWaveShaper();
   nodes.analyser = context.createAnalyser();
@@ -161,8 +141,8 @@ function setupSynth(){
 
 function setReverbImpulseResponse(url, convolver, callback) {
   var request = new XMLHttpRequest();
-  request.open("GET", url, true);
-  request.responseType = "arraybuffer";
+  request.open('GET', url, true);
+  request.responseType = 'arraybuffer';
 
   request.onload = function () {
     convolver.buffer = context.createBuffer(request.response, false);
@@ -197,14 +177,14 @@ function pannifyCoord(coord) {
     coord = 1000;
   }
 
-  return mapRange(coord, 0, 1000, -3, 3);
+  return mapRange(coord, 0, 1000, -5, 5);
 }
 
 
 function getCoord(pointer) {
   return {
     x: window.innerWidth / 2 + 3 * pointer.tipPosition[0],
-    y: window.innerHeight - 150 - pointer.tipPosition[1],
+    y: window.innerHeight - pointer.tipPosition[1],
     z: 180 + pointer.tipPosition[2],
     id: pointer.id
   };
@@ -216,7 +196,7 @@ function getCoord(pointer) {
 
 
 
-// SO should.include.keys(" ");
+// SO should.include.keys(' ');
 // make a theremin object that gets passed a frame.
 
 
@@ -245,7 +225,7 @@ $(document).ready(function() {
 
 
     var onsynth = [];
-    for (var i = 0; i < frame.pointables.length && i < 4; i++) {
+    for (var i = 0; i < frame.pointables.length && i < 5; i++) {
       var coord = getCoord(frame.pointables[i]);
 //       if(i == 0){
 //         console.log(coord)
